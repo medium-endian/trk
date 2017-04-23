@@ -20,8 +20,6 @@ use timesheet::session::EventType;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Timesheet {
-    start            : u64,
-    end              : u64,
     config           : Config,
     sessions         : Vec<Session>,
 }
@@ -56,10 +54,7 @@ impl Timesheet {
         };
         let mut config = Config::new();
         config.user_name = Some(author_name.to_string());
-        let now = get_seconds();
         let sheet = Timesheet {
-            start        : now,
-            end          : now + 1,
             config       : config,
             sessions     : Vec::<Session>::new(),
         };
@@ -87,7 +82,8 @@ impl Timesheet {
             match timestamp {
                 Some(timestamp) => {
                     let is_valid_ts = match self.sessions.last() {
-                        None => timestamp > self.start,
+                        // TODO simplify
+                        None => true,
                         Some(last_session) => timestamp > last_session.end,
                     };
                     if is_valid_ts {
@@ -111,7 +107,6 @@ impl Timesheet {
                 // TODO This is always problematic - rethink.
                 session.update_end();
                 session.finalize(timestamp);
-                self.end = session.end + 1;
             }
             None => println!("No session to finalize."),
         }
@@ -316,19 +311,16 @@ impl Timesheet {
     }
 
     pub fn timesheet_status(&self) -> String {
-        let mut status = format!("Sheet running for {}\n",
-                sec_to_hms_string(get_seconds() - self.start));
         match self.sessions.len() {
-            0 => write!(&mut status, "No sessions yet.\n").unwrap(),
-            n => {
-                write!(&mut status,
-                       "{} session(s) so far.\nLast session:\n{}",
-                       n,
-                       self.sessions[n - 1].status())
-                       .unwrap()
-            }
-        };
-        status
+            0 => String::from("No sessions yet."),
+            n => format!("Session running for {}\n/
+                          {} session(s) so far.\
+                          Last session:\n{}",
+                    sec_to_hms_string(self.sessions.last().unwrap().start
+                                    - self.sessions.first().unwrap().start),
+                    n,
+                    self.sessions[n - 1].status()),
+        }
     }
 
     pub fn last_session_status(&self) -> String {
@@ -391,7 +383,7 @@ impl Timesheet {
     }
 
     fn to_html(&self, ago: Option<u64>) -> String {
-        let timestamp = ago.unwrap_or(self.start);
+        let timestamp = ago.unwrap_or(0);
         let mut sessions_html = String::new();
         for session in &self.sessions {
             if session.start > timestamp {
