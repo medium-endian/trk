@@ -1,7 +1,6 @@
 use std::io::prelude::*;
 use std::{process, env};
 use std::path::Path;
-use std::error::Error;
 use std::fs::{self, OpenOptions};
 /* Alias to avoid naming conflict for write_all!() */
 use std::fmt::Write as std_write;
@@ -180,7 +179,7 @@ impl Timesheet {
                 true
             }
             Err(why) => {
-                println!("Could not report sheet! {}", why.description());
+                println!("Could not report sheet! {}", why.to_string());
                 false
             }
         }
@@ -202,7 +201,7 @@ impl Timesheet {
             Ok(file) => file,
             Err(why) => {
                 println!("Could not write report to session.html! {}",
-                         why.description());
+                         why.to_string());
                 return false;
             }
         };
@@ -264,7 +263,7 @@ impl Timesheet {
             }
             Err(why) => {
                 println!("Could not open timesheet.json file: {}",
-                         why.description());
+                         why.to_string());
                 false
             }
         }
@@ -287,7 +286,7 @@ impl Timesheet {
                     true
                 }
                 Err(why) => {
-                    println!("Could not report sheet! {}", why.description());
+                    println!("Could not report sheet! {}", why.to_string());
                     false
                 }
             }
@@ -307,7 +306,9 @@ pub fn load_from_file() -> Option<Timesheet> {
     loop {
         path.push(".trk");
         if path.exists() {
-            env::set_current_dir(&path).is_ok();
+            if env::set_current_dir(&path).is_err() {
+                return None;
+            }
             break;
         } else {
             path.pop();
@@ -354,7 +355,7 @@ pub fn load_from_file() -> Option<Timesheet> {
         let path = Path::new("./.trk/timesheet.json");
         if path.exists() {
             fs::remove_file(&path).unwrap_or_else(|why| {
-                println!("Could not remove sessions file: {}", why.description());
+                println!("Could not remove sessions file: {}", why.to_string());
             });
         }
         Timesheet::init(name.as_ref().map(|s| s.as_str()));
@@ -393,13 +394,13 @@ pub fn load_from_file() -> Option<Timesheet> {
                 }
             }
             Err(why) => {
-                println!("Couldn't obtain current directory: {}", why.description());
+                println!("Couldn't obtain current directory: {}", why.to_string());
                 process::exit(0)
             }
         };
         match Url::parse(&file_url) {
             Ok(url) => url.open(),
-            Err(why) => println!("Couldn't open file: {}", why.description()),
+            Err(why) => println!("Couldn't open file: {}", why.to_string()),
         }
     }
 

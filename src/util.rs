@@ -37,9 +37,9 @@ pub fn sec_to_hms_string(seconds: u64) -> String {
         (0, 1, _) => String::from("1 minute"),
         (0, m, _) => format!("{} minutes", m),
         /* Range matching: slightly dubious feature here */
-        (1, 0...4, _)   => String::from("1 hour"),
-        (h, 0...4, _)   => format!("{} hours", h),
-        (h, 56...59, _) => format!("{} hours", h + 1),
+        (1, 0..=4, _)   => String::from("1 hour"),
+        (h, 0..=4, _)   => format!("{} hours", h),
+        (h, 56..=59, _) => format!("{} hours", h + 1),
         (h, m, _)       => format!("{} hours and {} minutes", h, m),
     }
 }
@@ -69,8 +69,7 @@ pub fn set_to_trk_dir() -> bool {
         path.push(".trk");
         if path.exists() {
             path.pop();
-            env::set_current_dir(&path).is_ok();
-            return true;
+            return env::set_current_dir(&path).is_ok()
         } else {
             path.pop();
             if !path.pop() {
@@ -91,7 +90,9 @@ pub fn git_init_trk() -> bool {
     let mut path = env::current_dir().unwrap();
     path.push(".trk");
     if path.exists() {
-        env::set_current_dir(&path).is_ok();
+        if env::set_current_dir(&path).is_err() {
+            return false;
+        }
     } else {
         println!("Couldn't access .trk sub directory to initialise trk internal git repo.");
         return false;
@@ -120,8 +121,7 @@ pub fn git_init_trk() -> bool {
 
     /* Reset current_dir to previous value */
     path.pop();
-    env::set_current_dir(&path).is_ok();
-    true
+    env::set_current_dir(&path).is_ok()
 }
 
 pub fn git_commit_trk(message: &str) -> bool {
@@ -134,7 +134,9 @@ pub fn git_commit_trk(message: &str) -> bool {
     let mut p = env::current_dir().unwrap();
     p.push(".trk");
     if p.exists() {
-        env::set_current_dir(&p).is_ok();
+        if env::set_current_dir(&p).is_err() {
+            return false
+        }
     } else {
         println!("Couldn't access .trk sub directory to commit to trk internal git repo.");
         return false;
@@ -155,8 +157,7 @@ pub fn git_commit_trk(message: &str) -> bool {
 
     /* Reset current_dir to previous value */
     p.pop();
-    env::set_current_dir(&p).is_ok();
-    true
+    env::set_current_dir(&p).is_ok()
 }
 
 pub fn git_pull() -> bool {
@@ -169,7 +170,9 @@ pub fn git_pull() -> bool {
     let mut p = env::current_dir().unwrap();
     p.push(".trk");
     if p.exists() {
-        env::set_current_dir(&p).is_ok();
+        if env::set_current_dir(&p).is_err() {
+            return false
+        }
     } else {
         println!("Couldn't access .trk sub directory to pull from upstream .trk git repo.");
         return false;
@@ -187,8 +190,7 @@ pub fn git_pull() -> bool {
 
     /* Reset current_dir to previous value */
     p.pop();
-    env::set_current_dir(&p).is_ok();
-    true
+    env::set_current_dir(&p).is_ok()
 }
 pub fn git_push() -> bool {
     if !set_to_trk_dir() {
@@ -200,7 +202,9 @@ pub fn git_push() -> bool {
     let mut p = env::current_dir().unwrap();
     p.push(".trk");
     if p.exists() {
-        env::set_current_dir(&p).is_ok();
+        if env::set_current_dir(&p).is_err() {
+            return false
+        }
     } else {
         println!("Couldn't access .trk sub directory to push to upstream .trk git repo.");
         return false;
@@ -218,8 +222,7 @@ pub fn git_push() -> bool {
 
     /* Reset current_dir to previous value */
     p.pop();
-    env::set_current_dir(&p).is_ok();
-    true
+    env::set_current_dir(&p).is_ok()
 }
 
 pub fn git_author() -> Option<String> {
